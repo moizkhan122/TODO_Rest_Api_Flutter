@@ -1,8 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
-import 'package:http/http.dart' as http;
+import 'package:get/get.dart';
+
+import '../ToDoApiServices/ToDoApiServices.dart';
 
 // ignore: must_be_immutable
 class AddToDoList extends StatefulWidget {
@@ -36,6 +35,7 @@ class _AddToDoListState extends State<AddToDoList> {
   var descController = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    var controller = Get.find<ToDoApiServicesController>();
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -66,7 +66,11 @@ class _AddToDoListState extends State<AddToDoList> {
           ),
           const SizedBox(height: 20,),
           ElevatedButton(
-            onPressed:isEdit ? editData :submitData, 
+            onPressed:()async{
+              await isEdit ? controller.editData(
+              titleController.text,descController.text, widget.todo)
+              : controller.submitData(titleController.text, descController.text);
+            }, 
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Center(child: Text(isEdit ? "Edit" :"Submit",style: TextStyle(fontSize: 20),),),
@@ -75,89 +79,5 @@ class _AddToDoListState extends State<AddToDoList> {
     );
 
   }
-  ////////////////////////////////////////////
-
-  Future editData()async{
-    final todo = widget.todo;
-    if (todo == null) {
-      print("You can not call update without todo data");
-      return;
-    }
-
-    final id = todo['_id'];
-    final title = titleController.text;
-    final desc = descController.text;
-    
-        final body = {
-      'title' : title,
-      "description" : desc,
-      "is_completed" : false,
-    };
-    //submit data on server
-    final url = "https://api.nstack.in/v1/todos/$id";
-    final uri = Uri.parse(url);
-    final responce = await http.put(
-      uri,
-      body: jsonEncode(body),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-      );
-      if (responce.statusCode == 200) {
-          showSuccessMessage("Updated Success");
-      } else {
-        showErrorMessage("Update Error");
-      }
-  }
-
-  ////////////////////////////////////////////
-  Future submitData()async{
-    //get the data from form
-    final title = titleController.text;
-    final desc = descController.text;
-
-    final body = {
-      'title' : title,
-      "description" : desc,
-      "is_completed" : false,
-    };
-    //submit data on server
-    const url = "https://api.nstack.in/v1/todos";
-    final uri = Uri.parse(url);
-    final responce = await http.post(
-      uri,
-      body: jsonEncode(body),
-      headers: {
-        'Content-Type': 'application/json'
-      }
-      );
-   if (responce.statusCode == 201) {
-          showSuccessMessage("Form Submit Success");
-      } else {
-        showErrorMessage("Form Not Submit Error");
-      }
-  }
-
-  void showSuccessMessage(message){
-    Fluttertoast.showToast(
-        msg: message,
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 20.0
-    );
-  }
-  void showErrorMessage(message){
-    Fluttertoast.showToast(
-        msg: message,
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 20.0
-    );
-  }
+ 
 }
